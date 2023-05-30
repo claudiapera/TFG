@@ -1,0 +1,98 @@
+---
+title: "tfg_ticaverage"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Data
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(gridExtra)
+library(tidyr)
+library(plotly)
+library(ggrepel)
+library(knitr)
+
+
+##CHANGE THIS: the path to load peak matrix - remember! it ends in .zip if generated with rMSIproc, and ends in .pkmat if generated with rMSI2
+pks <- rMSI2::LoadPeakMatrix("/Users/ClaudiaPera/Desktop/TFG/Rknit/merged-peakmatrix.pkmat")
+
+tic_data <- pks$intensity/pks$normalizations$TIC
+new_datos <-read.csv("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/nombres.csv", header = FALSE, sep = ",")
+
+#NOMBRES
+new_nombres <- as.vector(new_datos[1]$V1)
+
+region <- unlist(sapply(1:length(new_nombres), function(x){rep(new_nombres[x], pks$numPixels[x])}))
+pks$region <- as.factor(region)
+
+#CATEGORIA
+categoria <- as.vector(new_datos[2]$V2)
+
+tipo <- unlist(sapply(1:length(categoria), function(x){rep(categoria[x], pks$numPixels[x])}))
+pks$tipo <- as.factor(tipo)
+
+#POR MUESTRAS
+muestras <-as.vector(new_datos[3]$V3)
+
+muestra_ag<-unlist(sapply(1:length(muestras), function(x){rep(muestras[x], pks$numPixels[x])}))
+pks$muestra_ag <- as.factor(muestra_ag)
+```
+
+# TIC accross all samples
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+##No need to change anything here
+
+df_tic <- data.frame(
+  names = pks$region,
+  tic = pks$normalizations$TIC
+)
+
+bx <- ggplot() + geom_boxplot(aes(x = df_tic$names, y = df_tic$tic)) + xlab("Thickness in nm") + ylab("Total intensity") +
+  geom_jitter(aes(x = df_tic$names, y = df_tic$tic), color = "red", alpha = 0.2, size = 0.4) + ggtitle("Total TIC")
+bx
+#ggsave("/home/guest/msidata2/TFG_Claudia/plots_resultados/Total TIC.jpg", plot = bx)
+
+rMSIproc::plotValuesImage(pks, pks$normalizations$TIC, labels = new_nombres, scale_title = "Total TIC in each pixel")
+
+```
+
+# Average spectra of the samples
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+intensity_matrix <- data.frame(pks$intensity) #cada columna es una masa
+colnames(intensity_matrix) <- pks$mass#ponemos nombre a estas masas
+intensity_matrix4<-intensity_matrix
+intensity_matrix4$muestra <- pks$muestra_ag # añadimos una columna con el num demuestra 
+df_muestra <-aggregate(intensity_matrix4[, 1:(ncol(intensity_matrix4)-1)], list(intensity_matrix4$muestra), mean)
+rownames(df_muestra)<-df_muestra$Group.1
+df_muestra$Group.1 <- NULL
+df_muestra_t <-as.data.frame(t(df_muestra))
+df_muestra_t $mass <- rownames(df_muestra_t ) #hacemos que los indices de filas (las masas) sean ahora una columna llamada mass
+rownames(df_muestra_t) <- NULL
+df_muestra_t$mass <- as.numeric(df_muestra_t$mass)
+
+# POR MUESTRAS AGRUPADAS 
+df_long4<- gather(df_muestra_t, muestra, intensity, KOCT:WTHFD, factor_key=TRUE)
+box_nombres4 <- c( 'KOCT', 'KOHFD', 'WTCT', 'WTHFD')
+box_nombres4 <-setNames(box_nombres4,box_nombres4)
+df_long4$mass <- as.numeric(df_long4$mass)
+
+
+graf4 <- ggplot(data = df_long4) +
+  geom_segment(aes(x=df_long4$mass, y=df_long4$intensity, xend = df_long4$mass, yend = 0)) + theme_light() + ylab("Intensity") + xlab("m/z") + facet_grid(df_long4$muestra ~ ., labeller = as_labeller(box_nombres4))
+graf4 
+
+graf4v <- ggplot(data = df_long4) +
+  geom_segment(aes(x=df_long4$mass, y=df_long4$intensity, xend = df_long4$mass, yend = 0)) + theme_light() + ylab("Intensity") + xlab("m/z") + facet_grid(~df_long4$muestra , labeller = as_labeller(box_nombres4))
+graf4v
+
+#knitr::knit("Result_TIC_Average.Rmd", "Result_TIC_Average.html")
+```
