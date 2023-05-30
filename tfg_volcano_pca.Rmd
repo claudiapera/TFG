@@ -1,0 +1,271 @@
+---
+title: "tfg_volcano_pca"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+library(tidyr)
+#library(plotly)
+library(ggrepel)
+
+
+##CHANGE THIS: the path to load peak matrix - remember! it ends in .zip if generated with rMSIproc, and ends in .pkmat if generated with rMSI2
+pks <- rMSI2::LoadPeakMatrix("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/merged-peakmatrix.pkmat")
+
+tic_data <- pks$intensity/pks$normalizations$TIC
+new_datos <-read.csv("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/nombres.csv", header = FALSE, sep = ",")
+
+#NOMBRES
+new_nombres <- as.vector(new_datos[1]$V1)
+
+region <- unlist(sapply(1:length(new_nombres), function(x){rep(new_nombres[x], pks$numPixels[x])}))
+pks$region <- as.factor(region)
+
+#CATEGORIA
+categoria <- as.vector(new_datos[2]$V2)
+
+tipo <- unlist(sapply(1:length(categoria), function(x){rep(categoria[x], pks$numPixels[x])}))
+pks$tipo <- as.factor(tipo)
+
+#POR MUESTRAS
+muestras <-as.vector(new_datos[3]$V3)
+
+muestra_ag<-unlist(sapply(1:length(muestras), function(x){rep(muestras[x], pks$numPixels[x])}))
+pks$muestra_ag <- as.factor(muestra_ag)
+```
+# Average spectra of the samples
+
+```{r echo=FALSE}
+intensity_matrix <- data.frame(pks$intensity) #cada columna es una masa
+colnames(intensity_matrix) <- pks$mass
+intensity_matrix4<-intensity_matrix#ponemos nombre a estas masas
+intensity_matrix4$muestra <- pks$muestra_ag # añadimos una columna con el num demuestra 
+df_muestra <-aggregate(intensity_matrix4[, 1:(ncol(intensity_matrix4)-1)], list(intensity_matrix4$muestra), mean)
+rownames(df_muestra)<-df_muestra$Group.1
+df_muestra$Group.1 <- NULL
+df_muestra_t <-as.data.frame(t(df_muestra))
+df_muestra_t $mass <- rownames(df_muestra_t ) #hacemos que los indices de filas (las masas) sean ahora una columna llamada mass
+rownames(df_muestra_t) <- NULL
+df_muestra_t$mass <- as.numeric(df_muestra_t$mass)
+```
+## Volcano
+
+You can also embed plots, for example:
+```{r }
+threshold_fc = 2
+threshold_p = 0.05
+foldchange_log2 <- function(var1, var2)
+ {
+   mv1 <- mean(var1)
+   mv2 <- mean(var2)
+   return (log2(mv2/mv1))
+} 
+
+
+v1 <-pks$intensity[pks$muestra_ag =="KOHFD", ]
+v2 <-pks$intensity[pks$muestra_ag =="WTHFD", ]
+
+  dfFC <- data.frame (mzID = 1:length(pks$mass),
+                    mz = pks$mass,
+                    meanint_1 = rep(NA, length(pks$mass)),
+                    meanint_2 = rep(NA, length(pks$mass)),
+                    FC = rep(NA, length(pks$mass)),
+                    pval = rep(NA, length(pks$mass)))
+
+
+  for( i in 1:length(pks$mass))
+    {
+dfFC$meanint_1[i] <- v1[ ,i]
+dfFC$meanint_2[i] <- v2[ ,i]
+dfFC$FC[i] <- foldchange_log2(v1[, i], v2[ , i] )
+dfFC$pval[i] <- kruskal.test(list( v1[, i], v2[ , i]))$p.value
+dfFC$threshold_fc[i] <- (abs(dfFC$FC[i]) >= threshold_fc)
+dfFC$threshold_pval[i] <- dfFC$pval[i] <= threshold_p
+dfFC$threshold[i] <- all(dfFC$threshold_pval[i], dfFC$threshold_fc[i])
+
+  dfFC$up[i] <- NA
+  dfFC$up_mz[i] <- NA
+  dfFC$down[i] <- NA
+  dfFC$down_mz[i] <- NA
+  
+if ((dfFC$threshold[i]) == "TRUE"){
+  if((dfFC$FC[i]) >= threshold_fc){
+    dfFC$up[i]<-"v2"
+    dfFC$up_mz[i]<-dfFC$meanint_2[i]
+  }else{
+    dfFC$down[i]<-"v1"
+    dfFC$down_mz[i]<-dfFC$meanint_1[i]
+  }
+}else{
+  
+}
+}
+dfFC_KOCT_WTCT<-dfFC
+cantidad_no_na <- sum(!is.na(dfFC_KOCT_WTCT$up))
+cantidad_down <- sum(!is.na(dfFC_KOCT_WTCT$down))
+
+dfFC_KOHFD_WTHFD<-dfFC
+cantidad_no_na_2 <- sum(!is.na(dfFC_KOHFD_WTHFD$up))
+cantidad_down_2 <- sum(!is.na(dfFC_KOHFD_WTHFD$down))
+
+dfFC_WTCT_WTHFD<-dfFC
+cantidad_no_na_2 <- sum(!is.na(dfFC_WTCT_WTHFD$up))
+cantidad_down_2 <- sum(!is.na(dfFC_WTCT_WTHFD$down))
+
+dfFC_KOCT_KOHFD<-dfFC
+cantidad_no_na_2 <- sum(!is.na(dfFC_KOCT_KOHFD$up))
+cantidad_down_2 <- sum(!is.na(dfFC_KOCT_KOHFD$down))
+
+
+volcanosfunction <- function(nom1, nom2, df)
+{
+  var1 <- nom1
+  var2 <- nom2
+
+  v1 <-pks$intensity[pks$muestra_ag ==nom1, ]
+  v2 <-pks$intensity[pks$muestra_ag ==nom2, ]
+
+  dfFC <- data.frame (mzID = 1:length(pks$mass),
+                    mz = pks$mass,
+                    meanint_1 = rep(NA, length(pks$mass)),
+                    meanint_2 = rep(NA, length(pks$mass)),
+                    FC = rep(NA, length(pks$mass)),
+                    pval = rep(NA, length(pks$mass)))
+
+
+  for( i in 1:length(pks$mass)) 
+    {
+dfFC$meanint_1[i] <- v1[ ,i] # se hace la media de toda esa columna de masas de 
+dfFC$meanint_2[i] <- v2[ ,i]
+dfFC$FC[i] <- foldchange_log2(v1[, i], v2[ , i] )
+dfFC$pval[i] <- kruskal.test(list( v1[, i], v2[ , i]))$p.value
+dfFC$threshold_fc[i] <- (abs(dfFC$FC[i]) >= threshold_fc)
+dfFC$threshold_pval[i] <- dfFC$pval[i] <= threshold_p
+dfFC$threshold[i] <- all(dfFC$threshold_pval[i], dfFC$threshold_fc[i])
+
+}
+}#dFC = dataframe con indice(mzID), primera
+
+sel_dfFC <- dfFC[dfFC$threshold==TRUE, ]
+
+df_muestra_t$mass <- as.numeric(df_muestra_t$mass)
+vol <- ggplot(data = dfFC, aes(x=FC, y =-log10(dfFC$pval))) + geom_point(aes(colour=dfFC$threshold, mapping = pks$mass), alpha=0.75, size=1.75) + theme_light() + xlab("fold change") + ylab("-log10 p-value") + ggtitle(paste("Volcano plot:", var1,  "(left) vs", var2, "(right)")) + scale_color_discrete(name = "Threshold")
+
+vol + geom_text_repel(data = sel_dfFC, aes(x= sel_dfFC$FC, y=-log10(sel_dfFC$pval), label = round(sel_dfFC$mz, 4)), colour = "grey")
+print(vol)
+#ggsave("/home/guest/msidata2/TFG_Claudia/plots_resultados/vol.jpg", plot =vol)
+
+s <- ggplot() +
+    geom_segment(aes(x=df$mass, y=df[[nom1]], xend = df$mass, yend = 0), colour = "red") + 
+    geom_segment(aes(x=df$mass, y=df[[nom2]]*(-1), xend = df$mass, yend = 0), colour = "blue") +
+    geom_segment(aes(x=sel_dfFC$mz, y=sel_dfFC$meanint_1, xend = sel_dfFC$mz, yend = 0), colour = "green") + 
+    theme_light() + ylab("Intensity") + xlab("m/z") +
+    annotate(geom = "text", label = var1, color = "red", x = 500, y = (max(df[[nom1]]))*0.75) + 
+    annotate(geom = "text", label = var2, color = "blue", x = 500, y = (min(df[[nom2]]* (-1))))
+  
+print(s)
+#ggsave("/home/guest/msidata2/TFG_Claudia/plots_resultados/s.jpg", plot =s)
+
+print("m/z that are significantly different between", nom1, "and" , nom2, ".")
+knitr::kable(sel_dfFC[,2])
+
+#write.csv(sel_dfFC[,2], file=path, row.names=FALSE)
+return(sel_dfFC)
+}
+
+
+
+sel_dfFC_koct_wtct<-volcanosfunction("KOCT", "WTCT", df_muestra_t)
+print("m/z that are significantly different between KOCT and WTCT.")
+knitr::kable(sel_dfFC_koct_wtct[,2])
+#,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/koct_wtct_sel.csv"). #estos paths fue para guardar la lista y llevarla al Lipid maps pero ya no hace falta guardarla
+
+sel_dfFC_koct_kohfd<-volcanosfunction("KOCT", "KOHFD", df_muestra_t)
+print("m/z that are significantly different between KOCT and KOHFD")
+knitr::kable(sel_dfFC_koct_kohfd[,2])
+#,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/koct_kohfd_sel.csv" )
+
+sel_dfFC_koct_wthfd<-volcanosfunction("KOCT", "WTHFD", df_muestra_t)
+print("m/z that are significantly different between KOCT and WTHFD")
+knitr::kable(sel_dfFC_koct_wthfd[,2])
+#,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/koct_wthfd_sel.csv" )
+
+sel_dfFC_kohfd_wtct<-volcanosfunction("KOHFD", "WTCT", df_muestra_t)
+print("m/z that are significantly different between KOHFD and WTCT.")
+knitr::kable(sel_dfFC_kohfd_wtct[,2])
+#,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/kohfd_wtct_sel.csv" )
+
+sel_dfFC_kohfd_wthfd<-volcanosfunction("KOHFD", "WTHFD", df_muestra_t)
+print("m/z that are significantly different between KOHFD and WTHFD")
+knitr::kable(sel_dfFC_kohfd_wthfd[,2])
+#,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/kohfd_wthfd_sel.csv" )
+
+sel_dfFC_wtct_wthfd<-volcanosfunction("WTCT", "WTHFD", df_muestra_t)
+print("m/z that are significantly different between WTCT and WTHFD")
+knitr::kable(sel_dfFC_wtct_wthfd[,2])
+#,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/wtct_wthfd_sel.csv" )
+```
+
+## PCA
+```{r }
+
+ticData <- pks$intensity/pks$normalizations$TIC
+nonorm <- pks$intensity
+
+#Subsetting of pks
+pksFiltered <- pks[pks$normalizations$TIC > 1e4, ]
+
+library(dplyr) #install this if you dont have the package
+
+#sample <- unlist(sapply(1:length(pksFiltered$names), function(x){rep(new_nombres[x], pksFiltered$numPixels[x])}))
+muestra_pca<-unlist(sapply(1:length(pksFiltered$names), function(x){rep(muestras[x], pksFiltered$numPixels[x])}))
+
+tic_df <- data.frame(pksFiltered$intensity/pksFiltered$normalizations$TIC) #Esto proporciona una medida relativa de la intensidad de cada píxel en relación con el TIC de la muestra.
+
+#tic_df$sample <- as.factor(sample)
+tic_df$muestra <- as.factor(muestra_pca)
+
+#set.seed(123)
+new_df_muestra <- tic_df%>%
+ group_by(muestra) %>%
+ sample_n(1000, replace = TRUE)
+new_tic <- new_df_muestra[ ,-ncol(new_df_muestra)]
+
+# new_df_sample <- tic_df%>%
+#  group_by(sample) %>%
+#  sample_n(1000, replace = TRUE)
+# new_tic <- new_df_sample[ ,-ncol(new_df_sample)]
+
+pca <- prcomp(new_tic, center = T, scale. = T) #contiene la información sobre las componentes principales y otros resultados del análisis
+# pca1 <- prcomp(new_tic, center = F, scale. = F)
+# pca2 <- prcomp(new_tic, center = F, scale. = T)
+# pca3 <- prcomp(new_tic, center = T, scale. = F)
+#plotpca <- rMSIproc::plotValuesImage(pksFiltered, pca$x[,1], labels = new_nombres, scale_title = "TIC PC1")
+#plotpca <- rMSIproc::plotValuesImage(pksFiltered, pca$x[,2], labels = new_nombres, scale_title = "TIC PC2")
+#plotpca <- rMSIproc::plotValuesImage(pksFiltered, pca$x[,3], labels = new_nombres, scale_title = "TIC PC3")
+
+x_PC <- 1
+y_PC <- 2
+variX <- 100*((pca$sdev[x_PC])^2/sum(pca$sdev^2)) #calcular el porcentaje de varianza explicada por cada componente
+pltDF <- data.frame( xPC = pca$x[,x_PC], yPC = pca$x[,y_PC], muestra = new_df_muestra$muestra) #contiene las coordenadas de las componentes principales (elegidas con x_PC y y_PC) y la columna "muestra" del dataframe new_df_muestra. Esto se realiza para preparar los datos
+pltDFrandomized <- pltDF[sample(nrow(pltDF)), ] #Randomize rows to get a better plot, versión aleatorizada de pltDF. Utiliza la función sample para mezclar aleatoriamente las filas de pltDF, con el fin de obtener un mejor trazado gráfico.
+
+
+bi_1 <- ggplot( data = pltDFrandomized, aes( x = xPC, y = yPC))
+bi_1_ <- bi_1 + theme_light()
+bi_1 <- bi_1 + geom_point( aes( colour = muestra), alpha = 0.5, size = 2)
+bi_1 <- bi_1 + scale_x_continuous(name = paste0("PC", x_PC, " (", round(variX, digits = 2), "%)"))
+bi_1 <- bi_1 + scale_y_continuous(name = paste0("PC", y_PC, " (", round(variY, digits = 2), "%)"))
+bi_1 <- bi_1 + ggtitle(paste0("TIC PC", x_PC, " vs. PC", y_PC, " TIC CENTER SCALE TRUE"))
+bi_1 + theme_light()
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
