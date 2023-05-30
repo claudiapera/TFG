@@ -1,0 +1,120 @@
+---
+title: "tfg_ion_identification"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(dplyr)
+library(knitr)
+library(kableExtra) 
+library(ggplot2)
+library(gridExtra)
+library(grid)
+library(tidyr)
+library(plotly)
+library(ggrepel)
+
+pks <- rMSI2::LoadPeakMatrix("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/merged-peakmatrix.pkmat") #usamos la pks del otro rmd que es la misma
+replicate <- rep(1:4, 6)
+replicate<-as.integer(c(2,3,4,1,2,3,4,1,2,3,2,3))
+replicate_ <-  unlist(sapply(1:length(replicate), function(x){rep(replicate[x], pks$numPixels[x])}))
+pks$replicate <- as.factor(replicate_)
+
+new_datos <-read.csv("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/nombres.csv", header = FALSE, sep = ",")
+muestras <-as.vector(new_datos[3]$V3)
+muestra_ag<-unlist(sapply(1:length(muestras), function(x){rep(muestras[x], pks$numPixels[x])}))
+pks$muestra_ag <- as.factor(muestra_ag)
+```
+
+##LIPID MAPS
+
+```{r pressure, echo=FALSE}
+
+grids_iones<-function (path,nom1,nom2){
+  
+nombres_columnas<-c("Input_Mass","Matched_Mass","Delta","Name", "Formula","Ion", "Lmsd_ex")
+identif_WT <- read.csv(path,sep='\t',col.names=nombres_columnas,header=TRUE)
+identif_WT$Input_Mass_factor <- as.factor(identif_WT$Input_Mass)
+identif_WT$ppm_error <- round(((identif_WT$Input_Mass-identif_WT$Matched_Mass)/identif_WT$Matched_Mass)*1000000, 2)
+list_masses <- unique(identif_WT$Input_Mass)
+
+var1_title <- nom1
+var2_title <- nom2
+
+tab_identif <- identif_WT[ , -7]
+kbl(tab_identif, caption = paste("Differential ions between conditions", var1_title, "and", var2_title)) %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+for (i in 1:length(list_masses)){
+  select <- which(pks$muestra_ag == var1_title | pks$muestra_ag == var2_title)
+  
+  f <- ggplot() + geom_boxplot(aes(x=pks$muestra_ag[select],
+                                 y=pks$intensity[select, which.min(abs(pks$mass-list_masses[i]))])) +
+   geom_jitter(aes(x=pks$muestra_ag[select], y=pks$intensity[select, which.min(abs(pks$mass-list_masses[i]))], color = pks$replicate[select]), size = 0.4, alpha = 0.2) +
+  ylab("Intensity") +
+  xlab("Sample name") +
+  ggtitle(paste("Intensity of ion", round(list_masses[i], 4))) +
+  theme_light() + theme(legend.position = "none")
+  
+  group_sel <- which(muestras == var1_title | muestras == var2_title)
+p <- rMSIproc::plotPeakImageG(pks[select,], list_masses[i], plot_labels = muestras[group_sel], plot_cols = 3, fixed_aspect_ratio = T, display_colorbar = F)
+
+
+tab <- identif_WT[identif_WT$Input_Mass == list_masses[i], -7]
+
+tab <- tableGrob(tab,rows=NULL,widths = unit(c(0.25,0.25,0.5,0.8,0.8,0.5,0.5,0.5), "in"))
+#tab <- editGrob(tab, gPath("colhead-fg"), gp = gpar(fontsize = 8))
+#grid.ls(tab)
+#, heights = unit(0.5, "in")
+lay <- rbind(c(1,2,2),
+             c(1, 2, 2),
+             c(3,3,3))
+p3<-grid.arrange(f, p, tab,
+              layout_matrix = lay,
+             as.table=TRUE,
+             heights = c(1.5, 0.75, 0.5),
+              widths = c(2.3, 2.3, 2.3))
+#tab_width <- unit(0.5, "npc")
+#p3$widths[3] <- tab_width
+
+print(p3)
+#filename <- paste0("grididentification_", i, ".jpg") # crea el nombre de archivo con la variable i
+#ggsave(file.path("/home", "guest", "msidata2","TFG_Claudia","plots_resultados","identificacion","koct_wtct_ion", filename), p3)
+}
+return(tab_identif)
+}
+
+
+
+tab_koct_wtct<-grids_iones("/home/guest/msidata2/TFG_Claudia/lipidMAPS/iones_koct_wtct.csv","KOCT","WTCT")
+kbl(tab_koct_wtct, caption = paste("Differential ions between conditions", "KOCT", "and", "WTCT")) %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+tab_koct_wthfd<-grids_iones("/home/guest/msidata2/TFG_Claudia/lipidMAPS/iones_koct_wthfd.csv","KOCT","WTHFD")
+kbl(tab_koct_wthfd, caption = paste("Differential ions between conditions", "KOCT", "and", "WTHFD")) %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+tab_kohfd_wtct<-grids_iones("/home/guest/msidata2/TFG_Claudia/lipidMAPS/iones_kohfd_wtct.csv","KOHFD","WTCT")
+kbl(tab_kohfd_wtct, caption = paste("Differential ions between conditions", "KOHFD", "and", "WTCT")) %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+tab_kohfd_wthfd<-grids_iones("/home/guest/msidata2/TFG_Claudia/lipidMAPS/iones_kohfd_wthfd.csv","KOHFD","WTHFD")
+kbl(tab_kohfd_wthfd, caption = paste("Differential ions between conditions", "KOHFD", "and", "WTHFD")) %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+tab_koct_kohfd<-grids_iones("/home/guest/msidata2/TFG_Claudia/lipidMAPS/iones_koct_kohfd.csv","KOCT","KOHFD")
+kbl(tab_koct_kohfd, caption = paste("Differential ions between conditions", "KOCT", "and", "KOHFD")) %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+tab_wtct_wthfd<-grids_iones("/home/guest/msidata2/TFG_Claudia/lipidMAPS/iones_wthfd_wtct.csv","WTCT","WTHFD")
+kbl(tab_wtct_wthfd, caption = paste("Differential ions between conditions", "WTCT", "and", "WTHFD")) %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+#knitr::knit("ion_identification.Rmd", "ion_identification.html")
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
