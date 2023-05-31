@@ -62,67 +62,13 @@ You can also embed plots, for example:
 ```{r }
 threshold_fc = 2
 threshold_p = 0.05
+
 foldchange_log2 <- function(var1, var2)
  {
    mv1 <- mean(var1)
    mv2 <- mean(var2)
    return (log2(mv2/mv1))
 } 
-
-
-v1 <-pks$intensity[pks$muestra_ag =="KOHFD", ]
-v2 <-pks$intensity[pks$muestra_ag =="WTHFD", ]
-
-  dfFC <- data.frame (mzID = 1:length(pks$mass),
-                    mz = pks$mass,
-                    meanint_1 = rep(NA, length(pks$mass)),
-                    meanint_2 = rep(NA, length(pks$mass)),
-                    FC = rep(NA, length(pks$mass)),
-                    pval = rep(NA, length(pks$mass)))
-
-
-  for( i in 1:length(pks$mass))
-    {
-dfFC$meanint_1[i] <- v1[ ,i]
-dfFC$meanint_2[i] <- v2[ ,i]
-dfFC$FC[i] <- foldchange_log2(v1[, i], v2[ , i] )
-dfFC$pval[i] <- kruskal.test(list( v1[, i], v2[ , i]))$p.value
-dfFC$threshold_fc[i] <- (abs(dfFC$FC[i]) >= threshold_fc)
-dfFC$threshold_pval[i] <- dfFC$pval[i] <= threshold_p
-dfFC$threshold[i] <- all(dfFC$threshold_pval[i], dfFC$threshold_fc[i])
-
-  dfFC$up[i] <- NA
-  dfFC$up_mz[i] <- NA
-  dfFC$down[i] <- NA
-  dfFC$down_mz[i] <- NA
-  
-if ((dfFC$threshold[i]) == "TRUE"){
-  if((dfFC$FC[i]) >= threshold_fc){
-    dfFC$up[i]<-"v2"
-    dfFC$up_mz[i]<-dfFC$meanint_2[i]
-  }else{
-    dfFC$down[i]<-"v1"
-    dfFC$down_mz[i]<-dfFC$meanint_1[i]
-  }
-}else{
-  
-}
-}
-dfFC_KOCT_WTCT<-dfFC
-cantidad_no_na <- sum(!is.na(dfFC_KOCT_WTCT$up))
-cantidad_down <- sum(!is.na(dfFC_KOCT_WTCT$down))
-
-dfFC_KOHFD_WTHFD<-dfFC
-cantidad_no_na_2 <- sum(!is.na(dfFC_KOHFD_WTHFD$up))
-cantidad_down_2 <- sum(!is.na(dfFC_KOHFD_WTHFD$down))
-
-dfFC_WTCT_WTHFD<-dfFC
-cantidad_no_na_2 <- sum(!is.na(dfFC_WTCT_WTHFD$up))
-cantidad_down_2 <- sum(!is.na(dfFC_WTCT_WTHFD$down))
-
-dfFC_KOCT_KOHFD<-dfFC
-cantidad_no_na_2 <- sum(!is.na(dfFC_KOCT_KOHFD$up))
-cantidad_down_2 <- sum(!is.na(dfFC_KOCT_KOHFD$down))
 
 
 volcanosfunction <- function(nom1, nom2, df)
@@ -141,18 +87,16 @@ volcanosfunction <- function(nom1, nom2, df)
                     pval = rep(NA, length(pks$mass)))
 
 
-  for( i in 1:length(pks$mass)) 
+  for( i in 1:length(pks$mass))
     {
-dfFC$meanint_1[i] <- v1[ ,i] # se hace la media de toda esa columna de masas de 
+dfFC$meanint_1[i] <- v1[ ,i]
 dfFC$meanint_2[i] <- v2[ ,i]
 dfFC$FC[i] <- foldchange_log2(v1[, i], v2[ , i] )
 dfFC$pval[i] <- kruskal.test(list( v1[, i], v2[ , i]))$p.value
 dfFC$threshold_fc[i] <- (abs(dfFC$FC[i]) >= threshold_fc)
 dfFC$threshold_pval[i] <- dfFC$pval[i] <= threshold_p
 dfFC$threshold[i] <- all(dfFC$threshold_pval[i], dfFC$threshold_fc[i])
-
 }
-}#dFC = dataframe con indice(mzID), primera
 
 sel_dfFC <- dfFC[dfFC$threshold==TRUE, ]
 
@@ -174,45 +118,59 @@ s <- ggplot() +
 print(s)
 #ggsave("/home/guest/msidata2/TFG_Claudia/plots_resultados/s.jpg", plot =s)
 
-print("m/z that are significantly different between", nom1, "and" , nom2, ".")
-knitr::kable(sel_dfFC[,2])
+#sel_dfFC_round[,2] <- apply(sel_dfFC[,2], 1, round, digits = 4)
+#print("m/z that are significantly different between", nom1, "and" , nom2, ".")
+#knitr::kable(sel_dfFC[,2])
+
 
 #write.csv(sel_dfFC[,2], file=path, row.names=FALSE)
 return(sel_dfFC)
 }
 
-
-
 sel_dfFC_koct_wtct<-volcanosfunction("KOCT", "WTCT", df_muestra_t)
-print("m/z that are significantly different between KOCT and WTCT.")
+print("m/z that are significantly diferent between KOCT and WTCT")
 knitr::kable(sel_dfFC_koct_wtct[,2])
+validos_koct_wtct <- sel_dfFC_koct_wtct[sel_dfFC_koct_wtct$threshold==TRUE, ]
+up_wtct_down_koct <- validos_koct_wtct[validos_koct_wtct$FC>=2, ]
+up_koct_down_wtct<-validos_koct_wtct[validos_koct_wtct$FC<2, ]
 #,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/koct_wtct_sel.csv"). #estos paths fue para guardar la lista y llevarla al Lipid maps pero ya no hace falta guardarla
 
 sel_dfFC_koct_kohfd<-volcanosfunction("KOCT", "KOHFD", df_muestra_t)
 print("m/z that are significantly different between KOCT and KOHFD")
 knitr::kable(sel_dfFC_koct_kohfd[,2])
+validos_koct_kohfd <- sel_dfFC_koct_kohfd[sel_dfFC_koct_kohfd$threshold==TRUE, ]
+up_kohfd_down_koct <- validos_koct_kohfd[validos_koct_kohfd$FC>=2, ]
+up_koct_down_kohfd<-validos_koct_kohfd[validos_koct_kohfd$FC<2, ]
 #,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/koct_kohfd_sel.csv" )
-
-sel_dfFC_koct_wthfd<-volcanosfunction("KOCT", "WTHFD", df_muestra_t)
-print("m/z that are significantly different between KOCT and WTHFD")
-knitr::kable(sel_dfFC_koct_wthfd[,2])
-#,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/koct_wthfd_sel.csv" )
-
-sel_dfFC_kohfd_wtct<-volcanosfunction("KOHFD", "WTCT", df_muestra_t)
-print("m/z that are significantly different between KOHFD and WTCT.")
-knitr::kable(sel_dfFC_kohfd_wtct[,2])
-#,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/kohfd_wtct_sel.csv" )
 
 sel_dfFC_kohfd_wthfd<-volcanosfunction("KOHFD", "WTHFD", df_muestra_t)
 print("m/z that are significantly different between KOHFD and WTHFD")
 knitr::kable(sel_dfFC_kohfd_wthfd[,2])
+validos_kohfd_wthfd <- sel_dfFC_kohfd_wthfd[sel_dfFC_kohfd_wthfd$threshold==TRUE, ]
+up_wthfd_down_kohfd <- validos_kohfd_wthfd[validos_kohfd_wthfd$FC>=2, ]
+up_kohfd_down_wthfd <-validos_kohfd_wthfd[validos_kohfd_wthfd$FC<2, ]
 #,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/kohfd_wthfd_sel.csv" )
 
 sel_dfFC_wtct_wthfd<-volcanosfunction("WTCT", "WTHFD", df_muestra_t)
 print("m/z that are significantly different between WTCT and WTHFD")
 knitr::kable(sel_dfFC_wtct_wthfd[,2])
+validos_wtct_wthfd <- sel_dfFC_wtct_wthfd[sel_dfFC_wtct_wthfd$threshold==TRUE, ]
+up_wthfd_down_wtct <- validos_wtct_wthfd[validos_wtct_wthfd$FC>=2, ]
+up_wtct_down_wthfd<-validos_wtct_wthfd[validos_wtct_wthfd$FC<2, ]
 #,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/wtct_wthfd_sel.csv" )
+
+##No relevantes estas comparaciones
+# sel_dfFC_koct_wthfd<-volcanosfunction("KOCT", "WTHFD", df_muestra_t)
+# print("m/z that are significantly different between KOCT and WTHFD")
+# knitr::kable(sel_dfFC_koct_wthfd[,2])
+# #,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/koct_wthfd_sel.csv" )
+# 
+# sel_dfFC_kohfd_wtct<-volcanosfunction("KOHFD", "WTCT", df_muestra_t)
+# print("m/z that are significantly different between KOHFD and WTCT.")
+# knitr::kable(sel_dfFC_kohfd_wtct[,2])
+# #,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/kohfd_wtct_sel.csv" )
 ```
+
 
 ## PCA
 ```{r }
