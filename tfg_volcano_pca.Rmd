@@ -89,8 +89,8 @@ volcanosfunction <- function(nom1, nom2, df)
 
   for( i in 1:length(pks$mass))
     {
-dfFC$meanint_1[i] <- v1[ ,i]
-dfFC$meanint_2[i] <- v2[ ,i]
+dfFC$meanint_1[i] <- mean(v1[ ,i])
+dfFC$meanint_2[i] <- mean(v2[ ,i])
 dfFC$FC[i] <- foldchange_log2(v1[, i], v2[ , i] )
 dfFC$pval[i] <- kruskal.test(list( v1[, i], v2[ , i]))$p.value
 dfFC$threshold_fc[i] <- (abs(dfFC$FC[i]) >= threshold_fc)
@@ -98,6 +98,14 @@ dfFC$threshold_pval[i] <- dfFC$pval[i] <= threshold_p
 dfFC$threshold[i] <- all(dfFC$threshold_pval[i], dfFC$threshold_fc[i])
 }
 
+  dfFC$pBH <- p.adjust(p = dfFC$pval, method = "BH")
+
+for( i in 1:length(pks$mass))
+{
+    dfFC$threshold_pval[i] <- dfFC$pBH[i] <= threshold_p
+dfFC$threshold[i] <- all(dfFC$threshold_pval[i], dfFC$threshold_fc[i])
+
+ }
 sel_dfFC <- dfFC[dfFC$threshold==TRUE, ]
 
 df_muestra_t$mass <- as.numeric(df_muestra_t$mass)
