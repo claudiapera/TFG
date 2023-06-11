@@ -91,3 +91,157 @@ grid.arrange(grafico1, grafico2, grafico4, grafico3, ncol = 2)
 
 
 ```
+
+```{r eval=FALSE, include=FALSE}
+# 
+# borrarmasas<-function(archivo,resultado)
+# {
+# fina_archivo_masas<- read.csv(archivo,header=TRUE)
+# vect_masas <-as.numeric(fina_archivo_masas$x)
+# distancias <-as.matrix(dist(vect_masas))
+# cords <- which(distancias < 1.0025 & distancias >0.9975, arr.ind=TRUE) # Esto te dará los índices de los elementos del vector que cumple que las distancias están entre 0.9975 y 1.0025
+# eliminar<-rownames(cords) # poner los indices como una columna
+# cords<-cbind(eliminar,cords) 
+# cords<-as.data.frame(cords) # pasarlo a tipo dataframe para poder comparar el max
+# cords$eliminar <- as.numeric(as.character(cords$eliminar))
+# #v_selected <- data.frame(vect_masas[cords[,1]], vect_masas[cords[,2]]) # Esto te dará los elementos por parejas que se separan de 1 Da
+# isotopos <- c() #crear la lista de valores que querremos eliminar
+# for (i in seq(1, nrow(cords), 2)) {
+#   max <- max(cords$eliminar[i], cords$eliminar[i+1])
+#   isotopos <- c(isotopos, max)
+# }
+# final_archivo_masas <- fina_archivo_masas[-isotopos, ]
+# final_archivo_masas<-data.frame(final_archivo_masas)
+# write.csv(final_archivo_masas, resultado,row.names = FALSE, sep = ";")
+# return(final_archivo_masas)
+# }
+# ####################################----- FILTRADAS------##########################
+# ###KOCT vs KOHFD
+# final_koct_kohfd_filtrado<-borrarmasas("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/koct_kohfd_sel.csv","/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/archivo_filtrado_koctkohfd.csv")
+# 
+# ###KOCT vs WTCT NINGUN ISTOPO QUE BORRAR 
+# #final_koct_wtct_filtrado<-borrarmasas("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/koct_wtct_sel.csv","/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/archivo_filtrado_koctwtct.csv")
+# #write.csv(no_filtradas_koctwtct,"/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/archivo_filtrado_koctwtct.csv")
+# ###KOCT vs WTHFD
+# final_koct_wthfd_filtrado<-borrarmasas("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/koct_wthfd_sel.csv","/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/archivo_filtrado_koctwthfd.csv")
+# 
+# ###KOHFD vs WTCT
+# final_kohfd_wtct_filtrado<-borrarmasas("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/kohfd_wtct_sel.csv","/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/archivo_filtrado_kohfdwtct.csv")
+# 
+# ###KOHFD vs WTHFD
+# final_kohfd_wthfd<-borrarmasas("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/kohfd_wthfd_sel.csv","/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/archivo_filtrado_kohfdwthfd.csv")
+# 
+# ###WTCT vs WTHFD
+# final_wtct_wthfd<-borrarmasas("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/wtct_wthfd_sel.csv","/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/archivo_filtrado_wtctwthfd.csv")
+# 
+
+########################################-------NO FILTRADAS -----############################
+
+# no_filtradas_koctkohfd<-read.csv("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/koct_kohfd_sel.csv",header=TRUE)
+# no_filtradas_koctwtct<-read.csv("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/koct_wtct_sel.csv", header=TRUE)
+# no_filtradas_koctwthfd<-read.csv("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/koct_wthfd_sel.csv",header=TRUE)
+# no_filtradas_kohfdwtct<-read.csv("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/kohfd_wtct_sel.csv",header=TRUE)
+# no_filtradas_kohfdwthfd<-read.csv("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/kohfd_wthfd_sel.csv",header=TRUE)
+# no_filtradas_wtct_wthfd<-read.csv("/home/guest/msidata2/TFG_Claudia/Procesado/analysisTodas/wtct_wthfd_sel.csv",header=TRUE)
+
+
+
+```
+
+## Size
+```{r pressure, echo=FALSE, out.width = "100%"}
+print("------------------------------KOHFD------------------------------------")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/kohfd12.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/kohfd13.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/kohfd14.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/kohfd21.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/kohfd22.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/kohfd23.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/kohfd24.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/kohfd11.jpg")
+
+print("------------------------------WTHFD------------------------------------")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wthfd11.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wthfd12.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wthfd13.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wthfd14.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wthfd21.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wthfd22.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wthfd23.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wthfd24.jpg")
+
+print("------------------------------KOCT------------------------------------")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/koct11.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/koct12.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/koct13.jpg")
+knitr::include_graphics("/Users/ClaudiaPera/Desktop/TFG/size_imagenes/koct21.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/koct22.jpg")
+knitr::include_graphics("/Users/ClaudiaPera/Desktop/TFG/size_imagenes/koct23.jpg")
+
+print("------------------------------WTCT------------------------------------")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wtct11.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wtct12.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wtct13.jpg")
+knitr::include_graphics("/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wtct21.jpg")
+knitr::include_graphics( "/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wtct22.jpg")
+knitr::include_graphics("/Users/ClaudiaPera/Desktop/TFG/size_imagenes/wtct23.jpg")
+```
+
+
+```{r echo=FALSE}
+####KOHFD
+areasbiggestlipids_kohfd<-read.csv("/Users/ClaudiaPera/Desktop/TFG/matlab/size_droplets/areas_biggestlipids_kofhd.csv",header = FALSE)
+colnames(areasbiggestlipids_kohfd)<-c('kohfd')
+#mediakohfd<-mean(areasbiggestlipids_kohfd$kohfd)
+
+ sizekohfd <- ggplot(areasbiggestlipids_kohfd, aes(x = "", y = kohfd)) + 
+  geom_boxplot()+ 
+  geom_text(aes(x = 1.7, y = median(kohfd), label = paste(round(median(kohfd),2))), 
+            hjust = 1.2, size = 4) +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 4, fill = "blue") +
+  #geom_text(aes(label = paste0("mean=", round(mediakohfd, 2))), vjust = -1, size = 4) +
+  labs(x = "kohfd", y = "")
+ #sizekohfd
+
+####WTHFD
+areasbiggestlipids_wthfd<-read.csv("/Users/ClaudiaPera/Desktop/TFG/matlab/size_droplets/areas_biggestlipids_wtfhd.csv",header = FALSE)
+colnames(areasbiggestlipids_wthfd)<-c('wthfd')
+
+  sizewthfd <- ggplot(areasbiggestlipids_wthfd, aes(x = "", y = wthfd)) + 
+  geom_boxplot()+ 
+  geom_text(aes(x = 1.7, y = median(wthfd), label = paste(round(median(wthfd),2))), 
+            hjust = 1.2, size = 4) +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 4, fill = "blue") +
+  #geom_text(aes(label = paste0("mean=", round(mediakohfd, 2))), vjust = -1, size = 4) +
+  labs(x = "wthfd", y = "")
+# sizewthfd
+
+####KOCT
+ areasbiggestlipids_koct<-read.csv("/Users/ClaudiaPera/Desktop/TFG/matlab/size_droplets/areas_biggestlipids_koct2.csv",header = FALSE)
+ colnames(areasbiggestlipids_koct)<-c('koct')
+ 
+  sizekoct <- ggplot(areasbiggestlipids_koct, aes(x = "", y = koct)) + 
+  geom_boxplot()+ 
+  geom_text(aes(x = 1.7, y = median(koct), label = paste(round(median(koct),2))), 
+            hjust = 1.2, size = 4) +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 4, fill = "blue") +
+  #geom_text(aes(label = paste0("mean=", round(mediakohfd, 2))), vjust = -1, size = 4) +
+  labs(x = "koct", y = "")
+ #sizekoct
+
+ ####WTCT
+ areasbiggestlipids_wtct<-read.csv("/Users/ClaudiaPera/Desktop/TFG/matlab/size_droplets/areas_biggestlipids_wtct.csv",header = FALSE)
+ colnames(areasbiggestlipids_wtct)<-c('wtct')
+
+  sizewtct <- ggplot(areasbiggestlipids_wtct, aes(x = "", y = wtct)) + 
+  geom_boxplot()+ 
+  geom_text(aes(x = 1.7, y = median(wtct), label = paste(round(median(wtct),2))), 
+            hjust = 1.2, size = 4) +
+  stat_summary(fun = mean, geom = "point", shape = 23, size = 4, fill = "blue") +
+  #geom_text(aes(label = paste0("mean=", round(mediakohfd, 2))), vjust = -1, size = 4) +
+  labs(x = "wtct", y = "")
+ #sizewtct
+cat("Lipid droplet with the largest size (detected using Matlab) of each sample grouped by group")
+total_box_size<-grid.arrange(sizekohfd, sizewthfd, sizekoct, sizewtct, ncol = 2)
+
+```
